@@ -68,7 +68,7 @@ contract TrueRaffle is VRFConsumerBaseV2 {
         bytes32 gasLane,
         uint64 subscriptionID,
         uint32 callbackGasLimit
-    ) {
+    ) VRFConsumerBaseV2(vrfCoordinator) {
         i_TrueEntranceFee = entranceFee;
         i_TrueTimeInterval = timeInterval;
         s_TrueLastTimeStamp = block.timestamp;
