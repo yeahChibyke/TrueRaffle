@@ -31,6 +31,7 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBa
 
 error TrueRaffle__NotEnoughETHSent();
 error TrueRaffle__TransferFailed();
+error TrueRaffle__TrueRaffleNotOpen();
 
 pragma solidity ^0.8.20;
 
@@ -41,6 +42,13 @@ pragma solidity ^0.8.20;
  * @dev implements Chainlink VRFv2
  */
 contract TrueRaffle is VRFConsumerBaseV2 {
+    /** Type declarations */
+
+    enum TrueRaffleState {
+        Open, // 0
+        Calculating // 1
+    }
+
     /** State Variables */
 
     uint16 private constant TRUE_REQUESTCONFIRMATIONS = 3;
@@ -58,6 +66,7 @@ contract TrueRaffle is VRFConsumerBaseV2 {
     address payable[] private s_TruePlayers;
     uint256 private s_TrueLastTimeStamp;
     address private s_TrueRecentWinner;
+    TrueRaffleState private s_TrueRaffleState;
 
     /** Events */
 
@@ -73,17 +82,24 @@ contract TrueRaffle is VRFConsumerBaseV2 {
     ) VRFConsumerBaseV2(vrfCoordinator) {
         i_TrueEntranceFee = entranceFee;
         i_TrueTimeInterval = timeInterval;
-        s_TrueLastTimeStamp = block.timestamp;
         i_TrueVRFCoordinator = VRFCoordinatorV2Interface(vrfCoordinator);
         i_TrueGasLane = gasLane;
         i_TrueSubscriptionID = subscriptionID;
         i_TrueCallbackGasLimit = callbackGasLimit;
+
+        s_TrueLastTimeStamp = block.timestamp;
+        s_TrueRaffleState = TrueRaffleState.Open;
     }
 
     function enterTrueRaffle() external payable {
         if (msg.value < i_TrueEntranceFee) {
             revert TrueRaffle__NotEnoughETHSent();
         }
+        // check that TrueRaffle is open
+        if (s_TrueRaffleState != TrueRaffleState.Open) {
+            revert TrueRaffle__TrueRaffleNotOpen();
+        }
+
         s_TruePlayers.push(payable(msg.sender));
         emit EnteredTrueRaffle(msg.sender);
     }
@@ -93,6 +109,10 @@ contract TrueRaffle is VRFConsumerBaseV2 {
         if ((block.timestamp - s_TrueLastTimeStamp) < i_TrueTimeInterval) {
             revert();
         }
+
+        // set state to calculating
+        s_TrueRaffleState = TrueRaffleState.Calculating;
+
         uint256 requestId = i_TrueVRFCoordinator.requestRandomWords(
             i_TrueGasLane, // gasLane
             i_TrueSubscriptionID,
@@ -109,6 +129,9 @@ contract TrueRaffle is VRFConsumerBaseV2 {
         uint256 indexOfTrueWinner = randomWords[0] % s_TruePlayers.length;
         address payable trueWinner = s_TruePlayers[indexOfTrueWinner];
         s_TrueRecentWinner = trueWinner;
+
+        // set state back to open
+        s_TrueRaffleState = TrueRaffleState.Open;
 
         (bool sent, ) = trueWinner.call{value: address(this).balance}("");
         if (!sent) {
