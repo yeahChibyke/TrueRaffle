@@ -30,6 +30,7 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBa
 /** Errors */
 
 error TrueRaffle__NotEnoughETHSent();
+error TrueRaffle__TransferFailed();
 
 pragma solidity ^0.8.20;
 
@@ -56,6 +57,7 @@ contract TrueRaffle is VRFConsumerBaseV2 {
 
     address payable[] private s_TruePlayers;
     uint256 private s_TrueLastTimeStamp;
+    address private s_TrueRecentWinner;
 
     /** Events */
 
@@ -103,7 +105,16 @@ contract TrueRaffle is VRFConsumerBaseV2 {
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] memory randomWords
-    ) internal override {}
+    ) internal override {
+        uint256 indexOfTrueWinner = randomWords[0] % s_TruePlayers.length;
+        address payable trueWinner = s_TruePlayers[indexOfTrueWinner];
+        s_TrueRecentWinner = trueWinner;
+
+        (bool sent, ) = trueWinner.call{value: address(this).balance}("");
+        if (!sent) {
+            revert TrueRaffle__TransferFailed();
+        }
+    }
 
     /** Getter Functions */
 
