@@ -71,6 +71,7 @@ contract TrueRaffle is VRFConsumerBaseV2 {
     /** Events */
 
     event EnteredTrueRaffle(address indexed TruePlayer);
+    event PickedTrueWinner(address indexed TrueWinner);
 
     constructor(
         uint256 entranceFee,
@@ -128,15 +129,22 @@ contract TrueRaffle is VRFConsumerBaseV2 {
     ) internal override {
         uint256 indexOfTrueWinner = randomWords[0] % s_TruePlayers.length;
         address payable trueWinner = s_TruePlayers[indexOfTrueWinner];
-        s_TrueRecentWinner = trueWinner;
 
+        // equate the current winner to true winner
+        s_TrueRecentWinner = trueWinner;
         // set state back to open
         s_TrueRaffleState = TrueRaffleState.Open;
+        // reset players array
+        s_TruePlayers = new address payable[](0);
+        // reset timestamp
+        s_TrueLastTimeStamp = block.timestamp;
 
         (bool sent, ) = trueWinner.call{value: address(this).balance}("");
         if (!sent) {
             revert TrueRaffle__TransferFailed();
         }
+
+        emit PickedTrueWinner(trueWinner);
     }
 
     /** Getter Functions */
