@@ -32,6 +32,11 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBa
 error TrueRaffle__NotEnoughETHSent();
 error TrueRaffle__TransferFailed();
 error TrueRaffle__TrueRaffleNotOpen();
+error TrueRaffle__UpKeepNotNeeded(
+    uint256 currentTrueBalance,
+    uint256 numTruePlayers,
+    uint256 trueRaffleState
+);
 
 pragma solidity ^0.8.20;
 
@@ -102,19 +107,46 @@ contract TrueRaffle is VRFConsumerBaseV2 {
         }
 
         s_TruePlayers.push(payable(msg.sender));
+
         emit EnteredTrueRaffle(msg.sender);
     }
 
-    function pickTrueWinner() external {
-        // check to ensure adequate time has passed
-        if ((block.timestamp - s_TrueLastTimeStamp) < i_TrueTimeInterval) {
-            revert();
+    /**
+     * @dev Chainlink Automation nodes call this function to check if it's time to perform an upKeep
+     * The following should be true for the check to return true:
+     *    time interval has passed between raffle runs
+     *    the raffle is in an Open state
+     *    the contract has ETH (i.e., players)
+     *    (Implicit) the subscription is funded with LINK
+     */
+    function checkUpKeep(
+        bytes memory /* checkData */
+    ) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
+        bool timeHasPassed = (block.timestamp - s_TrueLastTimeStamp) >=
+            i_TrueTimeInterval;
+        bool isOpen = TrueRaffleState.Open == s_TrueRaffleState;
+        bool hasBalance = address(this).balance > 0;
+        bool hasPlayers = s_TruePlayers.length > 0;
+        upkeepNeeded = (timeHasPassed && isOpen && hasBalance && hasPlayers);
+        return (upkeepNeeded, "0x0");
+    }
+
+    function performUpkeep(bytes calldata /* performData */) external {
+        (bool upKeepNeeded, ) = checkUpKeep("");
+
+        if (!upKeepNeeded) {
+            revert TrueRaffle__UpKeepNotNeeded(
+                address(this).balance,
+                s_TruePlayers.length,
+                uint256(s_TrueRaffleState)
+            );
         }
+        // check to ensure adequate time has passed
 
         // set state to calculating
         s_TrueRaffleState = TrueRaffleState.Calculating;
 
-        uint256 requestId = i_TrueVRFCoordinator.requestRandomWords(
+        /*uint256 requestId =*/ i_TrueVRFCoordinator.requestRandomWords(
             i_TrueGasLane, // gasLane
             i_TrueSubscriptionID,
             TRUE_REQUESTCONFIRMATIONS,
@@ -124,7 +156,7 @@ contract TrueRaffle is VRFConsumerBaseV2 {
     }
 
     function fulfillRandomWords(
-        uint256 requestId,
+        uint256 /*requestId*/,
         uint256[] memory randomWords
     ) internal override {
         uint256 indexOfTrueWinner = randomWords[0] % s_TruePlayers.length;
@@ -139,12 +171,12 @@ contract TrueRaffle is VRFConsumerBaseV2 {
         // reset timestamp
         s_TrueLastTimeStamp = block.timestamp;
 
+        emit PickedTrueWinner(trueWinner);
+
         (bool sent, ) = trueWinner.call{value: address(this).balance}("");
         if (!sent) {
             revert TrueRaffle__TransferFailed();
         }
-
-        emit PickedTrueWinner(trueWinner);
     }
 
     /** Getter Functions */
