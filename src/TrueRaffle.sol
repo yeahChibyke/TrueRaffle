@@ -1,27 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-// Layout of Contract:
-// version
-// imports
-// errors
-// interfaces, libraries, contracts
-// Type declarations
-// State variables
-// Events
-// Modifiers
-// Functions
-
-// Layout of Functions:
-// constructor
-// receive function (if exists)
-// fallback function (if exists)
-// external
-// public
-// internal
-// private
-// internal & private view & pure functions
-// external & public view & pure functions
-
 /** Imports */
 
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
@@ -98,7 +76,8 @@ contract TrueRaffle is VRFConsumerBaseV2 {
     }
 
     function enterTrueRaffle() external payable {
-        if (msg.value < i_TrueEntranceFee) {
+        // check msg.value is not lesser than i_TrueentranceFee
+        if (msg.value <= i_TrueEntranceFee) {
             revert TrueRaffle__NotEnoughETHSent();
         }
         // check that TrueRaffle is open
@@ -141,7 +120,6 @@ contract TrueRaffle is VRFConsumerBaseV2 {
                 uint256(s_TrueRaffleState)
             );
         }
-        // check to ensure adequate time has passed
 
         // set state to calculating
         s_TrueRaffleState = TrueRaffleState.Calculating;
@@ -171,12 +149,12 @@ contract TrueRaffle is VRFConsumerBaseV2 {
         // reset timestamp
         s_TrueLastTimeStamp = block.timestamp;
 
-        emit PickedTrueWinner(trueWinner);
-
         (bool sent, ) = trueWinner.call{value: address(this).balance}("");
         if (!sent) {
             revert TrueRaffle__TransferFailed();
         }
+
+        emit PickedTrueWinner(trueWinner);
     }
 
     /** Getter Functions */
