@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 
+pragma solidity ^0.8.20;
+
 /** Imports */
 
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
@@ -15,8 +17,6 @@ error TrueRaffle__UpKeepNotNeeded(
     uint256 numTruePlayers,
     uint256 trueRaffleState
 );
-
-pragma solidity ^0.8.20;
 
 /**
  * @title TrueRaffle
