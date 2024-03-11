@@ -7,17 +7,6 @@ pragma solidity ^0.8.20;
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
 
-/** Errors */
-
-error TrueRaffle__NotEnoughETHSent();
-error TrueRaffle__TransferFailed();
-error TrueRaffle__TrueRaffleNotOpen();
-error TrueRaffle__UpKeepNotNeeded(
-    uint256 currentTrueBalance,
-    uint256 numTruePlayers,
-    uint256 trueRaffleState
-);
-
 /**
  * @title TrueRaffle
  * @author yeahChibyke
@@ -25,6 +14,17 @@ error TrueRaffle__UpKeepNotNeeded(
  * @dev implements Chainlink VRFv2
  */
 contract TrueRaffle is VRFConsumerBaseV2 {
+    /** Errors */
+
+    error TrueRaffle__NotEnoughETHSent();
+    error TrueRaffle__TransferFailed();
+    error TrueRaffle__TrueRaffleNotOpen();
+    error TrueRaffle__UpKeepNotNeeded(
+        uint256 currentTrueBalance,
+        uint256 numTruePlayers,
+        uint256 trueRaffleState
+    );
+
     /** Type declarations */
 
     enum TrueRaffleState {
@@ -77,7 +77,7 @@ contract TrueRaffle is VRFConsumerBaseV2 {
 
     function enterTrueRaffle() external payable {
         // check msg.value is not lesser than i_TrueentranceFee
-        if (msg.value <= i_TrueEntranceFee) {
+        if (msg.value < i_TrueEntranceFee) {
             revert TrueRaffle__NotEnoughETHSent();
         }
         // check that TrueRaffle is open
@@ -165,5 +165,11 @@ contract TrueRaffle is VRFConsumerBaseV2 {
 
     function getTrueRaffleState() external view returns (TrueRaffleState) {
         return s_TrueRaffleState;
+    }
+
+    function getTruePlayer(
+        uint256 indexOfTruePlayer
+    ) external view returns (address) {
+        return s_TruePlayers[indexOfTruePlayer];
     }
 }

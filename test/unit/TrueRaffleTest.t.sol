@@ -18,7 +18,7 @@ contract TrueRaffleTest is Test {
     uint32 callbackGasLimit;
 
     address public player = makeAddr("player");
-    uint256 public constant STARTING_USER_BALANCE = 10 ether;
+    uint256 public constant STARTING_USER_BALANCE = 10e18;
 
     function setUp() external {
         DeployTrueRaffle trueDeployer = new DeployTrueRaffle();
@@ -32,11 +32,35 @@ contract TrueRaffleTest is Test {
             subscriptionID,
             callbackGasLimit
         ) = trueHelperConfig.activeTrueNetworkConfig();
+        vm.deal(player, STARTING_USER_BALANCE);
     }
 
     function testTrueRaffleInitialStateIsOpen() public view {
         assert(
             trueRaffle.getTrueRaffleState() == TrueRaffle.TrueRaffleState.Open
         );
+    }
+
+    //////////////////////////
+    // enterTrueRaffle  //////
+    //////////////////////////
+
+    function testEnterTrueRaffleRevertsWhenNotEnoughETH() public {
+        // arrange
+        vm.startPrank(player);
+        // act
+        vm.expectRevert(TrueRaffle.TrueRaffle__NotEnoughETHSent.selector);
+        // assert
+        trueRaffle.enterTrueRaffle();
+    }
+
+    function testPlayersAreAddedToTruePlayersArray() public {
+        // arrange
+        vm.startPrank(player);
+        // act
+        trueRaffle.enterTrueRaffle{value: entranceFee}();
+        address truePlayerAdded = trueRaffle.getTruePlayer(0);
+        // assert
+        assert(truePlayerAdded == player);
     }
 }
