@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
+import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 
 contract TrueHelperConfig is Script {
     struct TrueNetworkConfig {
@@ -25,7 +26,7 @@ contract TrueHelperConfig is Script {
 
     function getSepoliaTrueETHConfig()
         public
-        view
+        pure
         returns (TrueNetworkConfig memory)
     {
         return
@@ -41,11 +42,30 @@ contract TrueHelperConfig is Script {
 
     function getOrCreateTrueAnvilConfig()
         public
-        view
         returns (TrueNetworkConfig memory)
     {
         if (activeTrueNetworkConfig.vrfCoordinator != address(0)) {
             return activeTrueNetworkConfig;
         }
+
+        uint96 baseFee = 0.25 ether; // 0.25 LINK this is because, VRF transactions are done in LINK
+        uint96 gasPriceLink = 1e9; // 1 gwei of LINK
+
+        vm.startBroadcast();
+        VRFCoordinatorV2Mock vrfCoordinatorMock = new VRFCoordinatorV2Mock(
+            baseFee,
+            gasPriceLink
+        );
+        vm.stopBroadcast();
+
+        return
+            TrueNetworkConfig({
+                entranceFee: 0.01 ether,
+                timeInterval: 30,
+                vrfCoordinator: address(vrfCoordinatorMock),
+                gasLane: 0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c,
+                subscriptionID: 0, // deploy script will provide this!
+                callbackGasLimit: 500000 // 500,000
+            });
     }
 }

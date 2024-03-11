@@ -2,7 +2,7 @@
 
 ## About
 
-This code is to create a proveably random smart contract lottery
+This code is to create a provably random smart contract lottery
 
 ## What do I want it to do?
 
