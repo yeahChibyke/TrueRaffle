@@ -162,4 +162,8 @@ contract TrueRaffle is VRFConsumerBaseV2 {
     function getEntranceFee() external view returns (uint256) {
         return i_TrueEntranceFee;
     }
+
+    function getTrueRaffleState() external view returns (TrueRaffleState) {
+        return s_TrueRaffleState;
+    }
 }
