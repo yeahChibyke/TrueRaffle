@@ -7,6 +7,11 @@ import {DeployTrueRaffle} from "../../script/DeployTrueRaffle.s.sol";
 import {TrueHelperConfig} from "../../script/TrueHelperConfig.s.sol";
 
 contract TrueRaffleTest is Test {
+    /* Events */
+
+    event EnteredTrueRaffle(address indexed TruePlayer);
+    event PickedTrueWinner(address indexed TrueWinner);
+
     TrueRaffle trueRaffle;
     TrueHelperConfig trueHelperConfig;
 
@@ -61,5 +66,12 @@ contract TrueRaffleTest is Test {
         address truePlayerAdded = trueRaffle.getTruePlayer(0);
         // assert
         assert(truePlayerAdded == player);
+    }
+
+    function testEmitEventsWhenTrueRaffleEntered() public {
+        vm.startPrank(player);
+        vm.expectEmit(true, false, false, false, address(trueRaffle));
+        emit EnteredTrueRaffle(player);
+        trueRaffle.enterTrueRaffle{value: entranceFee}();
     }
 }
