@@ -21,6 +21,8 @@ contract TrueHelperConfig is Script {
             activeTrueNetworkConfig = getSepoliaTrueETHConfig();
         } else if (block.chainid == 5) {
             activeTrueNetworkConfig = getGoerliTrueETHConfig();
+        } else if (block.chainid == 43113) {
+            activeTrueNetworkConfig = getAvaFujiTestnetTrueETHConfig();
         } else {
             activeTrueNetworkConfig = getOrCreateTrueAnvilConfig();
         }
@@ -53,8 +55,24 @@ contract TrueHelperConfig is Script {
                 timeInterval: 30,
                 vrfCoordinator: 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D,
                 gasLane: 0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15,
-                subscriptionID: 0, // will update with our subID
-                callbackGasLimit: 500000 // 500,000
+                subscriptionID: 0,
+                callbackGasLimit: 500000
+            });
+    }
+
+    function getAvaFujiTestnetTrueETHConfig()
+        public
+        pure
+        returns (TrueNetworkConfig memory)
+    {
+        return
+            TrueNetworkConfig({
+                entranceFee: 0.01 ether,
+                timeInterval: 30,
+                vrfCoordinator: 0x2eD832Ba664535e5886b75D64C46EB9a228C2610,
+                gasLane: 0x354d2f95da55398f44b7cff77da56283d9c6c829a4bdf1bbcaf2ad6a4d081f61,
+                subscriptionID: 0,
+                callbackGasLimit: 500000
             });
     }
 
