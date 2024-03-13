@@ -48,9 +48,8 @@ contract TrueRaffleTest is Test {
     function testEnterTrueRaffleRevertsWhenNotEnoughETH() public {
         // arrange
         vm.startPrank(player);
-        // act
+        // act/assert
         vm.expectRevert(TrueRaffle.TrueRaffle__NotEnoughETHSent.selector);
-        // assert
         trueRaffle.enterTrueRaffle();
     }
 
