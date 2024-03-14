@@ -68,6 +68,22 @@ contract TrueRaffleTest is Test {
         assert(truePlayerAdded == player);
     }
 
+    function testRevertWhenTrueRaffleStateIsCalc() public {
+        vm.startPrank(player);
+        trueRaffle.enterTrueRaffle{value: entranceFee}();
+        // use vm.warp to set block.timestamp
+        vm.warp(block.timestamp + timeInterval + 1);
+        // use vm.roll to set blocknumber
+        vm.roll(block.number + 1);
+
+        trueRaffle.performUpkeep("");
+
+        vm.expectRevert(TrueRaffle.TrueRaffle__TrueRaffleNotOpen.selector);
+        vm.prank(player);
+
+        trueRaffle.enterTrueRaffle{value: entranceFee}();
+    }
+
     function testEmitEventsWhenTrueRaffleEntered() public {
         vm.startPrank(player);
         vm.expectEmit(true, false, false, false, address(trueRaffle));
